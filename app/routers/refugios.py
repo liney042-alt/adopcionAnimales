@@ -59,18 +59,20 @@ def actualizar_refugio(
     conn.close()
     return {"id": refugio_id, **datos.model_dump()}
 
-@router.delete("/{refugio_id}")
+# Eliminar refugio (Exclusivo Administrador)
+@router.delete("/{refugio_id}", status_code=status.HTTP_200_OK)
 def eliminar_refugio(
     refugio_id: int,
-    admin_actual: dict = Depends(security.requerir_admin)
+    admin: dict = Depends(security.requerir_admin)
 ):
     conn = obtener_conexion()
     cursor = conn.cursor()
-    cursor.execute("PRAGMA foreign_keys = ON;")
     cursor.execute("DELETE FROM refugios WHERE id = ?", (refugio_id,))
-    if cursor.rowcount == 0:
-        conn.close()
-        raise HTTPException(status_code=404, detail="Refugio no encontrado")
+    afectados = cursor.rowcount
     conn.commit()
     conn.close()
-    return {"mensaje": f"Refugio {refugio_id} eliminado exitosamente"}
+
+    if afectados == 0:
+        raise HTTPException(status_code=404, detail="Refugio no encontrado")
+
+    return {"mensaje": f"Refugio con ID {refugio_id} eliminado correctamente"}

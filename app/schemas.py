@@ -94,3 +94,14 @@ class SeguimientoRespuesta(BaseModel):
     solicitud_id: int
     observaciones: str
     fecha: str
+
+# Alias de compatibilidad para usuarios
+UsuarioCrear = UsuarioRegistro
+UsuarioLogin = UsuarioRegistro
+
+# Alias de compatibilidad para historiales y solicitudes
+HistorialCrear = HistorialMedicoCrear
+HistorialRespuesta = HistorialMedicoRespuesta
+
+SolicitudCrear = SolicitudAdopcionCrear
+SolicitudRespuesta = SolicitudAdopcionRespuesta
