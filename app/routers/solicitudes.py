@@ -10,9 +10,10 @@ def listar_solicitudes(usuario_actual: dict = Depends(security.obtener_usuario_a
     conn = obtener_conexion()
     cursor = conn.cursor()
     if usuario_actual.get("rol_id") == 1:
-        cursor.execute("SELECT * FROM solicitudes")
+        cursor.execute("SELECT * FROM solicitudes_adopcion")
     else:
-        cursor.execute("SELECT * FROM solicitudes WHERE usuario_id = ?", (usuario_actual["sub"],))
+        cursor.execute("SELECT * FROM solicitudes_adopcion WHERE usuario_id = ?", (usuario_actual["sub"],))
+    
     solicitudes = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return solicitudes
@@ -25,13 +26,19 @@ def crear_solicitud(
     conn = obtener_conexion()
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO solicitudes (usuario_id, animal_id, estado, fecha) VALUES (?, ?, ?, ?)",
+        "INSERT INTO solicitudes_adopcion (usuario_id, animal_id, estado, fecha) VALUES (?, ?, ?, ?)",
         (usuario_actual["sub"], solicitud.animal_id, "Pendiente", solicitud.fecha)
     )
     conn.commit()
     nuevo_id = cursor.lastrowid
     conn.close()
-    return {"id": nuevo_id, "usuario_id": int(usuario_actual["sub"]), "animal_id": solicitud.animal_id, "estado": "Pendiente", "fecha": solicitud.fecha}
+    return {
+        "id": nuevo_id, 
+        "usuario_id": int(usuario_actual["sub"]), 
+        "animal_id": solicitud.animal_id, 
+        "estado": "Pendiente", 
+        "fecha": solicitud.fecha
+    }
 
 @router.delete("/{solicitud_id}", status_code=status.HTTP_200_OK)
 def eliminar_solicitud(
@@ -40,7 +47,7 @@ def eliminar_solicitud(
 ):
     conn = obtener_conexion()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM solicitudes WHERE id = ?", (solicitud_id,))
+    cursor.execute("DELETE FROM solicitudes_adopcion WHERE id = ?", (solicitud_id,))
     afectados = cursor.rowcount
     conn.commit()
     conn.close()
