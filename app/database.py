@@ -1,5 +1,9 @@
+import os
 import sqlite3
 import hashlib
+from dotenv import load_dotenv
+
+load_dotenv()
 
 DATABASE_NAME = "refugio.db"
 
@@ -14,6 +18,13 @@ def obtener_conexion():
     return conn
 
 def inicializar_bd():
+    # Validar variables requeridas de entorno
+    admin_email = os.environ.get("ADMIN_EMAIL")
+    admin_password = os.environ.get("ADMIN_PASSWORD")
+
+    if not admin_email or not admin_password:
+        raise RuntimeError("CRÍTICO: Las variables 'ADMIN_EMAIL' y/o 'ADMIN_PASSWORD' no están definidas en el entorno.")
+
     conn = obtener_conexion()
     cursor = conn.cursor()
     cursor.execute("PRAGMA foreign_keys = ON;")
@@ -30,10 +41,15 @@ def inicializar_bd():
     cursor.execute("INSERT OR IGNORE INTO roles (id, nombre) VALUES (1, 'Administrador')")
     cursor.execute("INSERT OR IGNORE INTO roles (id, nombre) VALUES (2, 'Voluntario')")
 
-    admin_hash = obtener_password_hash_nativo("admin123")
-    cursor.execute("INSERT OR IGNORE INTO usuarios (id, nombre, email, password_hash, rol_id) VALUES (1, 'Admin', 'admin@refugio.com', ?, 1)", (admin_hash,))
+    admin_hash = obtener_password_hash_nativo(admin_password)
+    
+    cursor.execute(
+        "INSERT OR IGNORE INTO usuarios (id, nombre, email, password_hash, rol_id) VALUES (1, 'Admin', ?, ?, 1)", 
+        (admin_email, admin_hash)
+    )
     cursor.execute("INSERT OR IGNORE INTO especies (id, nombre, descripcion) VALUES (1, 'Perro', 'Caninos')")
     cursor.execute("INSERT OR IGNORE INTO especies (id, nombre, descripcion) VALUES (2, 'Gato', 'Felinos')")
 
     conn.commit()
     conn.close()
+    

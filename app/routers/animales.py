@@ -59,7 +59,7 @@ def actualizar_animal(
     conn.close()
     return {"id": animal_id, **datos.model_dump()}
 
-@router.delete("/{animal_id}")
+@router.delete("/{animal_id}", status_code=status.HTTP_200_OK)
 def eliminar_animal(
     animal_id: int,
     admin_actual: dict = Depends(security.requerir_admin)
@@ -74,22 +74,3 @@ def eliminar_animal(
     conn.commit()
     conn.close()
     return {"mensaje": f"Animal {animal_id} eliminado exitosamente (sus historiales y solicitudes asociadas se eliminaron en cascada)"}
-
-# Eliminar animal (Exclusivo para Administradores)
-@router.delete("/{animal_id}", status_code=status.HTTP_200_OK)
-def eliminar_animal(
-    animal_id: int,
-    admin_actual: dict = Depends(security.requerir_admin) # Protege el endpoint solo para ROL Admin (rol_id = 1)
-):
-    conn = obtener_conexion()
-    cursor = conn.cursor()
-    
-    cursor.execute("DELETE FROM animales WHERE id = ?", (animal_id,))
-    afectados = cursor.rowcount
-    conn.commit()
-    conn.close()
-
-    if afectados == 0:
-        raise HTTPException(status_code=404, detail="Animal no encontrado")
-        
-    return {"mensaje": f"Animal con ID {animal_id} eliminado correctamente"}
