@@ -10,7 +10,10 @@ app = FastAPI(
     title="Sistema Refugio de Animales - SQLite3 Nativo",
     version="1.0.0"
 )
-
+# JUSTIFICACIÓN DE CORS:
+# Se habilita CORSMiddleware permitiendo orígenes de desarrollo local (http://localhost:3000, http://127.0.0.1:8000)
+# y la opción "*" temporalmente durante el despliegue para permitir pruebas desde clientes frontend (como Swagger UI, Postman o clientes web).
+# En entornos de producción estrictos, "allow_origins" debe restringirse explícitamente a la URL del frontend desplegado.
 # Configuración del Middleware de CORS
 # Permitimos todos los orígenes (*) para facilitar el acceso de clientes y pruebas durante el despliegue de la API
 app.add_middleware(
