@@ -95,9 +95,19 @@ class SeguimientoRespuesta(BaseModel):
     observaciones: str
     fecha: str
 
-# Alias de compatibilidad para usuarios
+class UsuarioLogin(BaseModel):
+    email: str
+    password: str
+
+    @field_validator('email')
+    @classmethod
+    def validar_email(cls, v: str) -> str:
+        if not re.match(EMAIL_REGEX, v):
+            raise ValueError('El correo electronico no es valido')
+        return v
+
+# Alias de compatibilidad
 UsuarioCrear = UsuarioRegistro
-UsuarioLogin = UsuarioRegistro
 
 # Alias de compatibilidad para historiales y solicitudes
 HistorialCrear = HistorialMedicoCrear

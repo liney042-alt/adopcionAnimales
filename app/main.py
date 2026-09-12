@@ -6,10 +6,10 @@ from app.routers import usuarios, especies, refugios, animales, historiales, sol
 inicializar_bd()
 
 app = FastAPI(
-    title="Sistema Refugio de Animales - SQLite3 Nativo",
-    version="1.0.0"
+    title="Sistema Adopción Animales",
+    description="API v1.0.1 - Desplegada con CI/CD",
+    version="1.0.1"
 )
-
 app.include_router(usuarios.router)
 app.include_router(especies.router)
 app.include_router(refugios.router)
