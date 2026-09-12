@@ -147,4 +147,31 @@ Accede a la consola de Swagger UI en tu navegador:
 3. `chore: regenerar requirements.txt actualizado`
 4. `fix: corregir nombre de tabla solicitudes_adopcion y consultas de base de datos`
 
----
+
+
+## Despliegue en Producción (Render)
+
+El proyecto se encuentra desplegado y operativo en la nube a través de la plataforma Render.
+
+* **URL Pública de la API:** [https://adopcionanimales.onrender.com](https://adopcionanimales.onrender.com)
+* **Documentación Interactiva (Swagger UI):** [https://adopcionanimales.onrender.com/docs](https://adopcionanimales.onrender.com/docs)
+
+###  Código QR de Acceso
+Escanea el siguiente código QR desde tu dispositivo móvil para acceder a la documentación interactiva en producción:
+
+![Código QR Swagger UI](./app/img/codigo.png)
+
+
+## Limitaciones Conocidas del Entorno de Despliegue
+
+Este proyecto se encuentra alojado en la infraestructura gratuita de **Render**, por lo que presenta las siguientes características de arquitectura:
+
+1. **Suspensión por inactividad (Spin Down / Arranque en frío):**
+   * **Comportamiento:** El servicio entra en estado de suspensión tras 15 minutos sin recibir peticiones HTTP.
+   * **Causa:** Política de ahorro de recursos del plan *Free* de Render.
+   * **Impacto:** La primera petición realizada después de un periodo de inactividad puede tardar entre 50 y 60 segundos mientras el contenedor se despierta.
+
+2. **Sistema de archivos efímero (Persistencia de datos):**
+   * **Comportamiento:** La base de datos SQLite (`refugio.db`) se reinicia a su estado inicial con los datos semilla en cada redespliegue o reinicio del servidor.
+   * **Causa:** El almacenamiento en disco del plan gratuito es efímero y descarta archivos generados en tiempo de ejecución.
+   * **Solución propuesta:** Para un entorno productivo empresarial, la persistencia se debe migrar a un motor gestionado externo como **PostgreSQL**.
