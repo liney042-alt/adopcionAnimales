@@ -1,3 +1,4 @@
+import os
 import sqlite3
 import hashlib
 import hmac
@@ -5,11 +6,17 @@ import base64
 import json
 import time
 from typing import Optional
+from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.database import obtener_conexion
 
-SECRET_KEY = "clave_secreta_sena_python_nativo"
+load_dotenv()
+
+SECRET_KEY = os.environ.get("SECRET_KEY")
+
+if not SECRET_KEY:
+    raise RuntimeError("CRÍTICO: La variable de entorno 'SECRET_KEY' no está definida.")
 
 security_scheme = HTTPBearer()
 
@@ -24,7 +31,6 @@ def verificar_password(plain_password: str, hashed_password: str) -> bool:
 def _base64url_encode(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).rstrip(b'=').decode('utf-8')
 
-# Función auxiliar para decodificar Base64URL sin errores de padding
 def _base64url_decode(data: str) -> bytes:
     padding = '=' * (4 - (len(data) % 4))
     return base64.urlsafe_b64decode(data + padding)
@@ -59,14 +65,12 @@ def obtener_usuario_actual(auth: HTTPAuthorizationCredentials = Depends(security
         
         header_b64, payload_b64, signature_b64 = parts
         
-        # 1. Validar la firma utilizando hmac.compare_digest para evitar ataques de tiempo
         signature_input = f"{header_b64}.{payload_b64}".encode('utf-8')
         expected_sig = _base64url_encode(hmac.new(SECRET_KEY.encode('utf-8'), signature_input, hashlib.sha256).digest())
         
         if not hmac.compare_digest(signature_b64, expected_sig):
             raise credentials_exception
 
-        # 2. Decodificar payload usando la nueva función con padding exacto
         payload_bytes = _base64url_decode(payload_b64)
         payload = json.loads(payload_bytes.decode('utf-8'))
         
@@ -93,9 +97,8 @@ def obtener_usuario_actual(auth: HTTPAuthorizationCredentials = Depends(security
         
     return dict(row)
 
-# Asegúrate de tener también definida la función requerir_admin
 def requerir_admin(usuario_actual: dict = Depends(obtener_usuario_actual)) -> dict:
-    if usuario_actual.get("rol_id") != 1:  # Asumiendo que 1 es el rol de Administrador
+    if usuario_actual.get("rol_id") != 1:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="No tienes permisos suficientes para realizar esta acción"
