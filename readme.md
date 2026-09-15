@@ -158,8 +158,7 @@ El proyecto se encuentra desplegado y operativo en la nube a través de la plata
 
 ###  Código QR de Acceso
 Escanea el siguiente código QR desde tu dispositivo móvil para acceder a la documentación interactiva en producción:
-
-![Código QR Swagger UI](./app/img/codigo.png) width="20" alt="Codigo QR Swagger UI"
+<img src="./app/img/codigo.png" width="200" alt="Código QR Swagger UI">
 
 
 ## Limitaciones Conocidas del Entorno de Despliegue
