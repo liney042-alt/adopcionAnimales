@@ -31,12 +31,23 @@ def crear_animal(
 ):
     conn = obtener_conexion()
     cursor = conn.cursor()
-    cursor.execute(
-        "INSERT INTO animales (nombre, edad, especie_id, refugio_id, estado) VALUES (?, ?, ?, ?, ?)",
-        (animal.nombre, animal.edad, animal.especie_id, animal.refugio_id, animal.estado or "Disponible")
-    )
-    conn.commit()
-    nuevo_id = cursor.lastrowid
+    try:
+        cursor.execute(
+            "INSERT INTO animales (nombre, edad, especie_id, refugio_id, estado) VALUES (?, ?, ?, ?, ?)",
+            (animal.nombre, animal.edad, animal.especie_id, animal.refugio_id, animal.estado or "Disponible")
+        )
+        conn.commit()
+        nuevo_id = cursor.lastrowid
+    except sqlite3.IntegrityError as e:
+        conn.close()
+        error_msg = str(e).lower()
+        if "foreign key" in error_msg:
+            raise HTTPException(
+                status_code=400, 
+                detail="El especie_id o refugio_id especificado no existe"
+            )
+        raise HTTPException(status_code=400, detail="Error de integridad al crear el animal")
+    
     conn.close()
     return {"id": nuevo_id, **animal.model_dump()}
 
@@ -48,14 +59,25 @@ def actualizar_animal(
 ):
     conn = obtener_conexion()
     cursor = conn.cursor()
-    cursor.execute(
-        "UPDATE animales SET nombre = ?, edad = ?, especie_id = ?, refugio_id = ?, estado = ? WHERE id = ?",
-        (datos.nombre, datos.edad, datos.especie_id, datos.refugio_id, datos.estado, animal_id)
-    )
-    if cursor.rowcount == 0:
+    try:
+        cursor.execute(
+            "UPDATE animales SET nombre = ?, edad = ?, especie_id = ?, refugio_id = ?, estado = ? WHERE id = ?",
+            (datos.nombre, datos.edad, datos.especie_id, datos.refugio_id, datos.estado, animal_id)
+        )
+        if cursor.rowcount == 0:
+            conn.close()
+            raise HTTPException(status_code=404, detail="Animal no encontrado")
+        conn.commit()
+    except sqlite3.IntegrityError as e:
         conn.close()
-        raise HTTPException(status_code=404, detail="Animal no encontrado")
-    conn.commit()
+        error_msg = str(e).lower()
+        if "foreign key" in error_msg:
+            raise HTTPException(
+                status_code=400, 
+                detail="El especie_id o refugio_id especificado no existe"
+            )
+        raise HTTPException(status_code=400, detail="Error de integridad al actualizar el animal")
+        
     conn.close()
     return {"id": animal_id, **datos.model_dump()}
 
@@ -66,7 +88,6 @@ def eliminar_animal(
 ):
     conn = obtener_conexion()
     cursor = conn.cursor()
-    cursor.execute("PRAGMA foreign_keys = ON;")
     cursor.execute("DELETE FROM animales WHERE id = ?", (animal_id,))
     if cursor.rowcount == 0:
         conn.close()

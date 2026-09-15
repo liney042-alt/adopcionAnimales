@@ -33,7 +33,11 @@ def crear_especie(
     conn = obtener_conexion()
     cursor = conn.cursor()
     try:
-        cursor.execute("INSERT INTO especies (nombre) VALUES (?)", (especie.nombre,))
+        # Se incluye la columna descripcion en la inserción
+        cursor.execute(
+            "INSERT INTO especies (nombre, descripcion) VALUES (?, ?)", 
+            (especie.nombre, especie.descripcion)
+        )
         conn.commit()
         nuevo_id = cursor.lastrowid
     except sqlite3.IntegrityError:

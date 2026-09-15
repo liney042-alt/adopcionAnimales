@@ -11,20 +11,42 @@ def registrar_usuario(usuario: schemas.UsuarioRegistro):
     cursor = conn.cursor()
     
     hash_pass = obtener_password_hash_nativo(usuario.password)
+    ROL_VOLUNTARIO_ID = 2  # Asignación automática para registros públicos
     
     try:
         cursor.execute(
             "INSERT INTO usuarios (nombre, email, password_hash, rol_id) VALUES (?, ?, ?, ?)",
-            (usuario.nombre, usuario.email, hash_pass, usuario.rol_id)
+            (usuario.nombre, usuario.email, hash_pass, ROL_VOLUNTARIO_ID)
         )
         conn.commit()
         nuevo_id = cursor.lastrowid
-    except sqlite3.IntegrityError:
+    except sqlite3.IntegrityError as e:
         conn.close()
-        raise HTTPException(status_code=400, detail="El email ya se encuentra registrado")
+        error_msg = str(e).lower()
+        
+        if "unique" in error_msg or "email" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail="El email ya se encuentra registrado"
+            )
+        elif "foreign key" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail="El rol asignado por defecto no existe en la base de datos"
+            )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, 
+                detail="Error de integridad en la base de datos"
+            )
     
     conn.close()
-    return {"id": nuevo_id, "nombre": usuario.nombre, "email": usuario.email, "rol_id": usuario.rol_id}
+    return {
+        "id": nuevo_id, 
+        "nombre": usuario.nombre, 
+        "email": usuario.email, 
+        "rol_id": ROL_VOLUNTARIO_ID
+    }
 
 @router.post("/token")
 def login_para_token(credenciales: schemas.UsuarioLogin):
@@ -40,7 +62,6 @@ def login_para_token(credenciales: schemas.UsuarioLogin):
     token = security.crear_token_acceso({"sub": str(row["id"]), "rol_id": row["rol_id"], "email": row["email"]})
     return {"access_token": token, "token_type": "bearer"}
 
-# 1. MOSTRAR USUARIO ACTUAL (Accesible para cualquier usuario autenticado)
 @router.get("/usuarios/me", response_model=schemas.UsuarioRespuesta)
 def leer_usuario_actual(usuario_actual: dict = Depends(security.obtener_usuario_actual)):
     return {
@@ -50,7 +71,6 @@ def leer_usuario_actual(usuario_actual: dict = Depends(security.obtener_usuario_
         "rol_id": usuario_actual["rol_id"]
     }
 
-# Solo Admin puede listar todos los usuarios
 @router.get("/usuarios", response_model=list[schemas.UsuarioRespuesta])
 def listar_usuarios(admin: dict = Depends(security.requerir_admin)):
     conn = obtener_conexion()
@@ -60,7 +80,6 @@ def listar_usuarios(admin: dict = Depends(security.requerir_admin)):
     conn.close()
     return usuarios
 
-# 2. SOLO ADMIN PUEDE ELIMINAR USUARIOS (Protegido por requerir_admin)
 @router.delete("/usuarios/{usuario_id}", status_code=status.HTTP_200_OK)
 def eliminar_usuario(
     usuario_id: int,
