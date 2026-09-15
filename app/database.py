@@ -15,8 +15,9 @@ def obtener_password_hash_nativo(password: str) -> str:
 def obtener_conexion():
     conn = sqlite3.connect(DATABASE_NAME)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON;")  # <--- Activa la validación en CADA conexión
     return conn
-
+    
 def inicializar_bd():
     # Validar variables requeridas de entorno
     admin_email = os.environ.get("ADMIN_EMAIL")
